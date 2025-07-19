@@ -51,6 +51,7 @@ filegroup {
         "virtgpu.c",
         "virtgpu_cross_domain.c",
         "virtgpu_virgl.c",
+        "vmwgfx.c",
         "xe.c",
     ],
 }
@@ -87,7 +88,9 @@ mediatek_cflags = [
     "-DHAS_DMABUF_SYSTEM_HEAP",
 ]
 
-all_cflags = generic_cflags + intel_cflags + meson_cflags + msm_cflags + mediatek_cflags
+vmwgfx_cflags = ["-DDRV_VMWGFX"]
+
+all_cflags = generic_cflags + intel_cflags + meson_cflags + msm_cflags + mediatek_cflags + vmwgfx_cflags
 
 cc_defaults {
     name: "minigbm_defaults_upstream",
@@ -110,6 +113,7 @@ cc_defaults {
         "mt8186": mediatek_cflags + ["-DMTK_MT8186"],
         "mt8188": mediatek_cflags + ["-DMTK_MT8188G"],
         "mt8196": mediatek_cflags + ["-DMTK_MT8196"],
+        "vmwgfx": vmwgfx_cflags,
         default: [],
     }) + select(soong_config_variable("minigbm_upstream", "cflags"), {
         any @ flag_val: flag_val,
