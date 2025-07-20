@@ -26,7 +26,10 @@ package {
 cc_library_shared {
     name: "mapper.minigbm_upstream",
     defaults: ["minigbm_gralloc4_common_defaults_upstream"],
-    vintf_fragments: ["mapper.minigbm_upstream.xml"],
+    vintf_fragments: select(soong_config_variable("minigbm", "include_vintf_fragments"), {
+        false: [],
+        default: ["mapper.minigbm_upstream.xml"],
+    }),
     shared_libs: [
         "android.hardware.graphics.allocator-V2-ndk",
         "libminigbm_gralloc_upstream",
