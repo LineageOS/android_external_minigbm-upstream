@@ -27,8 +27,14 @@ cc_binary {
     name: "android.hardware.graphics.allocator-service.minigbm_upstream",
     defaults: ["minigbm_cros_gralloc_defaults_upstream"],
     relative_install_path: "hw",
-    init_rc: ["allocator.minigbm_upstream.rc"],
-    vintf_fragments: ["allocator.minigbm_upstream.xml"],
+    init_rc: select(soong_config_variable("minigbm_upstream", "include_init_rc"), {
+        false: [],
+        default: ["allocator.minigbm_upstream.rc"],
+    }),
+    vintf_fragments: select(soong_config_variable("minigbm_upstream", "include_vintf_fragments"), {
+        false: [],
+        default: ["allocator.minigbm_upstream.xml"],
+    }),
     vendor: true,
     shared_libs: [
         "android.hardware.graphics.allocator-V2-ndk",
