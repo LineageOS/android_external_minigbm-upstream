@@ -16,10 +16,11 @@
 
 #define LOG_TAG "GBM-MESA-WRAPPER"
 
-#include <gbm.h>
+#include <external/gbm_mesa.h>
 
 #include "gbm_mesa_wrapper.h"
 
+#include <dlfcn.h>
 #include <drm_fourcc.h>
 #include <errno.h>
 #include <log/log.h>
@@ -63,9 +64,23 @@ static uint32_t get_gbm_mesa_format(uint32_t drm_format)
 	return 0;
 }
 
+struct gbm_priv_ops gbm_priv_ops = {
+	.is_initialized = false,
+	.gbm_device_destroy = NULL,
+	.gbm_create_device = NULL,
+	.gbm_bo_create = NULL,
+	.gbm_bo_import = NULL,
+	.gbm_bo_map = NULL,
+	.gbm_bo_unmap = NULL,
+	.gbm_bo_get_stride = NULL,
+	.gbm_bo_get_fd = NULL,
+	.gbm_bo_get_modifier = NULL,
+	.gbm_bo_destroy = NULL,
+};
+
 static struct gbm_device *gbm_mesa_dev_create(int fd)
 {
-	struct gbm_device *gbm = gbm_create_device(fd);
+	struct gbm_device *gbm = gbm_priv_ops.gbm_create_device(fd);
 	if (!gbm)
 		ALOGE("Unable to create gbm device");
 
@@ -74,7 +89,7 @@ static struct gbm_device *gbm_mesa_dev_create(int fd)
 
 static void gbm_mesa_dev_destroy(struct gbm_device *gbm)
 {
-	gbm_device_destroy(gbm);
+	gbm_priv_ops.gbm_device_destroy(gbm);
 }
 
 // ALLOCATOR_ONLY!
@@ -90,7 +105,7 @@ static int gbm_mesa_alloc(struct alloc_args *args)
 	if (args->use_scanout)
 		usage |= GBM_BO_USE_SCANOUT;
 
-	bo = gbm_bo_create(args->gbm, args->width, args->height, gbm_format, usage);
+	bo = gbm_priv_ops.gbm_bo_create(args->gbm, args->width, args->height, gbm_format, usage);
 
 	if (!bo) {
 		ALOGE("Unable to create BO, size=%dx%d, fmt=%d", args->width, args->height,
@@ -100,13 +115,13 @@ static int gbm_mesa_alloc(struct alloc_args *args)
 
 	/* gbm_mesa will create new fd, therefore it's our responsibility to close it once we don't
 	 * need the buffer */
-	args->out_fd = gbm_bo_get_fd(bo);
+	args->out_fd = gbm_priv_ops.gbm_bo_get_fd(bo);
 
-	args->out_stride = gbm_bo_get_stride(bo);
-	args->out_modifier = gbm_bo_get_modifier(bo);
+	args->out_stride = gbm_priv_ops.gbm_bo_get_stride(bo);
+	args->out_modifier = gbm_priv_ops.gbm_bo_get_modifier(bo);
 
 	/* Buffer is now handled through the system via out_fd, we can now destroy gbm_mesa bo */
-	gbm_bo_destroy(bo);
+	gbm_priv_ops.gbm_bo_destroy(bo);
 
 	if (args->needs_map_stride) {
 		/* At least on Intel and nouveau map_stride after gbm_create is different from
@@ -123,7 +138,7 @@ static int gbm_mesa_alloc(struct alloc_args *args)
 		void *addr = NULL;
 		void *map_data = NULL;
 
-		bo = gbm_bo_import(args->gbm, GBM_BO_IMPORT_FD_MODIFIER, &data, 0);
+		bo = gbm_priv_ops.gbm_bo_import(args->gbm, GBM_BO_IMPORT_FD_MODIFIER, &data, 0);
 		if (!bo) {
 			ALOGE("Failed to import BO during map_stride query");
 			return -EINVAL;
@@ -131,15 +146,15 @@ static int gbm_mesa_alloc(struct alloc_args *args)
 
 		int flags = GBM_BO_TRANSFER_READ | GBM_BO_TRANSFER_WRITE;
 
-		addr = gbm_bo_map(bo, 0, 0, args->width, args->height, flags, &args->out_map_stride,
-				  &map_data);
+		addr = gbm_priv_ops.gbm_bo_map(bo, 0, 0, args->width, args->height, flags,
+				  &args->out_map_stride, &map_data);
 		if (addr == MAP_FAILED) {
 			ALOGE("Failed to map the buffer at %s:%d", __FILE__, __LINE__);
 		} else {
-			gbm_bo_unmap(bo, map_data);
+			gbm_priv_ops.gbm_bo_unmap(bo, map_data);
 		}
 
-		gbm_bo_destroy(bo);
+		gbm_priv_ops.gbm_bo_destroy(bo);
 	}
 
 	return 0;
@@ -161,14 +176,14 @@ static struct gbm_bo *gbm_import(struct gbm_device *gbm, int buf_fd, uint32_t wi
 		.modifier = modifier,
 	};
 
-	bo = gbm_bo_import(gbm, GBM_BO_IMPORT_FD_MODIFIER, &data, 0);
+	bo = gbm_priv_ops.gbm_bo_import(gbm, GBM_BO_IMPORT_FD_MODIFIER, &data, 0);
 
 	return bo;
 }
 
 static void gbm_free(struct gbm_bo *bo)
 {
-	gbm_bo_destroy(bo);
+	gbm_priv_ops.gbm_bo_destroy(bo);
 }
 
 static void gbm_map(struct gbm_bo *bo, int w, int h, void **addr, void **map_data)
@@ -176,7 +191,7 @@ static void gbm_map(struct gbm_bo *bo, int w, int h, void **addr, void **map_dat
 	int flags = GBM_BO_TRANSFER_READ | GBM_BO_TRANSFER_WRITE;
 
 	uint32_t stride = 0;
-	*addr = gbm_bo_map(bo, 0, 0, w, h, flags, &stride, map_data);
+	*addr = gbm_priv_ops.gbm_bo_map(bo, 0, 0, w, h, flags, &stride, map_data);
 	if (addr == MAP_FAILED) {
 		ALOGE("Failed to map the buffer at %s:%d", __FILE__, __LINE__);
 	}
@@ -184,7 +199,7 @@ static void gbm_map(struct gbm_bo *bo, int w, int h, void **addr, void **map_dat
 
 static void gbm_unmap(struct gbm_bo *bo, void *map_data)
 {
-	gbm_bo_unmap(bo, map_data);
+	gbm_priv_ops.gbm_bo_unmap(bo, map_data);
 }
 
 struct gbm_ops gbm_ops = {
@@ -198,7 +213,41 @@ struct gbm_ops gbm_ops = {
 	.unmap = gbm_unmap,
 };
 
+static bool setup_gbm_priv_ops()
+{
+	if (gbm_priv_ops.is_initialized) {
+		return true;
+	}
+
+	void *handle = dlopen("libgbm_mesa.so", RTLD_NOW);
+	if (!handle) {
+		ALOGE("Failed to open libgbm_mesa.so: %s", dlerror());
+		return false;
+	}
+
+#define LOAD_GBM_SYMBOL(sym) gbm_priv_ops.sym = (sym##_func)dlsym(handle, #sym);
+	LOAD_GBM_SYMBOL(gbm_device_destroy);
+	LOAD_GBM_SYMBOL(gbm_create_device);
+	LOAD_GBM_SYMBOL(gbm_bo_create);
+	LOAD_GBM_SYMBOL(gbm_bo_import);
+	LOAD_GBM_SYMBOL(gbm_bo_map);
+	LOAD_GBM_SYMBOL(gbm_bo_unmap);
+	LOAD_GBM_SYMBOL(gbm_bo_get_stride);
+	LOAD_GBM_SYMBOL(gbm_bo_get_fd);
+	LOAD_GBM_SYMBOL(gbm_bo_get_modifier);
+	LOAD_GBM_SYMBOL(gbm_bo_destroy);
+#undef LOAD_GBM_SYMBOL
+
+	gbm_priv_ops.is_initialized = true;
+
+	return true;
+}
+
 __attribute__((visibility("default"))) struct gbm_ops *get_gbm_ops()
 {
+	if (!setup_gbm_priv_ops()) {
+		return NULL;
+	}
+
 	return &gbm_ops;
 }
