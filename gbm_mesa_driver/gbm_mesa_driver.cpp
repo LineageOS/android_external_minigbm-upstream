@@ -23,7 +23,7 @@
 extern "C" {
 #endif
 
-struct backend gbm_mesa_backend = {
+struct backend backend_gbm_mesa = {
 	.name = "gbm_mesa",
 	.init = gbm_mesa_driver_init,
 	.close = gbm_mesa_driver_close,
@@ -39,7 +39,7 @@ struct backend gbm_mesa_backend = {
 
 struct backend *init_external_backend()
 {
-	return &gbm_mesa_backend;
+	return &backend_gbm_mesa;
 }
 
 #ifdef __cplusplus
