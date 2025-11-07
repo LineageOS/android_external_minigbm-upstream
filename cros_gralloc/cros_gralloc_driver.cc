@@ -116,6 +116,9 @@ static struct driver *init_try_node(int idx, char const *str)
 
 static struct driver *init_try_nodes()
 {
+#ifdef DRV_GBM_MESA
+	return drv_create(-1);
+#else
 	/*
 	 * Create a driver from render nodes first, then try card
 	 * nodes.
@@ -147,13 +150,18 @@ static struct driver *init_try_nodes()
 	}
 
 	return nullptr;
+#endif
 }
 
 static void drv_destroy_and_close(struct driver *drv)
 {
+#ifndef DRV_GBM_MESA
 	int fd = drv_get_fd(drv);
+#endif
 	drv_destroy(drv);
+#ifndef DRV_GBM_MESA
 	close(fd);
+#endif
 }
 
 cros_gralloc_driver::cros_gralloc_driver() : drv_(init_try_nodes(), drv_destroy_and_close)
