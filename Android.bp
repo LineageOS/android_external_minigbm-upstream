@@ -53,7 +53,13 @@ filegroup {
         "virtgpu_virgl.c",
         "vmwgfx.c",
         "xe.c",
-    ],
+    ] + select(soong_config_variable("minigbm_upstream", "platform"), {
+        "gbm_mesa": [
+            "gbm_mesa_driver/gbm_mesa_driver.cpp",
+            "gbm_mesa_driver/gbm_mesa_internals.cpp",
+        ],
+        default: [],
+    }),
 }
 
 filegroup {
@@ -71,6 +77,10 @@ filegroup {
     srcs: ["cros_gralloc/gralloc0/gralloc0.cc"],
 }
 
+gbm_mesa_cflags = [
+    "-DDRV_GBM_MESA",
+    "-DHAS_DMABUF_SYSTEM_HEAP",
+]
 generic_cflags = ["-DHAS_DMABUF_SYSTEM_HEAP"]
 intel_cflags = [
     "-DDRV_I915",
@@ -106,6 +116,7 @@ cc_defaults {
         "-Wsign-compare",
     ] + select(soong_config_variable("minigbm_upstream", "platform"), {
         "all": all_cflags,
+        "gbm_mesa": gbm_mesa_cflags,
         "generic": generic_cflags,
         "intel": intel_cflags,
         "meson": meson_cflags,
@@ -125,6 +136,11 @@ cc_defaults {
             cflags: ["-DANDROID_API_LEVEL=%d"],
         },
     },
+
+    required: select(soong_config_variable("minigbm_upstream", "platform"), {
+        "gbm_mesa": ["libgbm_mesa_wrapper"],
+        default: [],
+    }),
 }
 
 cc_library_headers {

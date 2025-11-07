@@ -1,0 +1,17 @@
+//
+// SPDX-FileCopyrightText: The LineageOS Project
+// SPDX-License-Identifier: Apache-2.0
+//
+
+cc_library_shared {
+    name: "libgbm_mesa_wrapper",
+    vendor: true,
+    srcs: ["gbm_mesa_wrapper.c"],
+    shared_libs: [
+        "libdrm",
+        "liblog",
+    ],
+    header_libs: [
+        "minigbm_headers_upstream",
+    ],
+}

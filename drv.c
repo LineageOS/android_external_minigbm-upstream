@@ -35,6 +35,9 @@
 #ifdef DRV_AMDGPU
 extern const struct backend backend_amdgpu;
 #endif
+#ifdef DRV_GBM_MESA
+extern const struct backend backend_gbm_mesa;
+#endif
 #ifdef DRV_I915
 extern const struct backend backend_i915;
 #endif
@@ -96,16 +99,21 @@ static const struct backend *drv_backend_list[] = {
 
 void drv_preload(bool load)
 {
+#ifndef DRV_GBM_MESA
 	unsigned int i;
 	for (i = 0; i < ARRAY_SIZE(drv_backend_list); i++) {
 		const struct backend *b = drv_backend_list[i];
 		if (b->preload)
 			b->preload(load);
 	}
+#endif
 }
 
 static const struct backend *drv_get_backend(int fd)
 {
+#ifdef DRV_GBM_MESA
+	return &backend_gbm_mesa;
+#else
 	drmVersionPtr drm_version;
 	unsigned int i;
 
@@ -126,6 +134,7 @@ static const struct backend *drv_get_backend(int fd)
 
 	drv_loge("no matching backend, using dumb backend as fallback\n");
 	return &backend_dumb_generic;
+#endif
 }
 
 struct driver *drv_create(int fd, const struct backend *backend)
