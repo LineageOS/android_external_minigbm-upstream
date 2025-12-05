@@ -53,8 +53,8 @@ filegroup {
         "virtgpu_virgl.c",
         "vmwgfx.c",
         "xe.c",
-    ] + select(soong_config_variable("minigbm_upstream", "platform"), {
-        "gbm_mesa": [
+    ] + select(soong_config_variable("minigbm_upstream", "enable_gbm_mesa_driver"), {
+        true: [
             "gbm_mesa_driver/gbm_mesa_driver.cpp",
             "gbm_mesa_driver/gbm_mesa_internals.cpp",
         ],
@@ -100,6 +100,7 @@ mediatek_cflags = [
 
 vmwgfx_cflags = ["-DDRV_VMWGFX"]
 
+// gbm_mesa is excluded, as it requires more configuration
 all_cflags = generic_cflags + intel_cflags + meson_cflags + msm_cflags + mediatek_cflags + vmwgfx_cflags
 
 cc_defaults {
@@ -116,7 +117,6 @@ cc_defaults {
         "-Wsign-compare",
     ] + select(soong_config_variable("minigbm_upstream", "platform"), {
         "all": all_cflags,
-        "gbm_mesa": gbm_mesa_cflags,
         "generic": generic_cflags,
         "intel": intel_cflags,
         "meson": meson_cflags,
@@ -129,6 +129,9 @@ cc_defaults {
     }) + select(soong_config_variable("minigbm_upstream", "cflags"), {
         any @ flag_val: flag_val,
         default: [],
+    }) + select(soong_config_variable("minigbm_upstream", "enable_gbm_mesa_driver"), {
+        true: gbm_mesa_cflags,
+        default: [],
     }),
 
     product_variables: {
@@ -137,8 +140,8 @@ cc_defaults {
         },
     },
 
-    required: select(soong_config_variable("minigbm_upstream", "platform"), {
-        "gbm_mesa": ["libgbm_mesa_wrapper"],
+    required: select(soong_config_variable("minigbm_upstream", "enable_gbm_mesa_driver"), {
+        true: ["libgbm_mesa_wrapper"],
         default: [],
     }),
 }
