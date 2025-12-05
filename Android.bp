@@ -86,6 +86,8 @@ mediatek_cflags = [
     "-DHAS_DMABUF_SYSTEM_HEAP",
 ]
 
+all_cflags = generic_cflags + intel_cflags + meson_cflags + msm_cflags + mediatek_cflags
+
 cc_defaults {
     name: "minigbm_defaults_upstream",
 
@@ -99,6 +101,7 @@ cc_defaults {
         "-Wpointer-arith",
         "-Wsign-compare",
     ] + select(soong_config_variable("minigbm_upstream", "platform"), {
+        "all": all_cflags,
         "generic": generic_cflags,
         "intel": intel_cflags,
         "meson": meson_cflags,
