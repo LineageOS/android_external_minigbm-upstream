@@ -1,4 +1,5 @@
 // Copyright (C) 2024 The Android Open Source Project
+// Copyright (C) 2025 The LineageOS Project
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,9 +18,9 @@ package {
 }
 
 soong_config_module_type {
-    name: "cf_apex",
+    name: "minigbm_upstream_apex",
     module_type: "apex",
-    config_namespace: "cvd",
+    config_namespace: "minigbm_upstream",
     bool_variables: [
         "RELEASE_SM_OPEN_DECLARED_PASSTHROUGH_HAL",
     ],
@@ -28,68 +29,69 @@ soong_config_module_type {
     ],
 }
 
-cf_apex {
-    name: "com.google.cf.gralloc",
+minigbm_upstream_apex {
+    name: "org.lineageos.device.gralloc.minigbm_upstream",
     manifest: "apex_manifest.json",
-    key: "com.google.cf.apex.key",
-    certificate: ":com.google.cf.apex.certificate",
+    key: "com.android.hardware.key",
+    certificate: ":com.android.hardware.certificate",
     file_contexts: "apex_file_contexts",
     updatable: false,
     vendor: true,
 
     binaries: [
-        "android.hardware.graphics.allocator-service.minigbm",
+        "android.hardware.graphics.allocator-service.minigbm_upstream",
     ],
     prebuilts: [
-        "allocator.minigbm.xml", // vintf
-        "com.google.cf.gralloc.rc", // init_rc
+        "allocator.minigbm_upstream.xml", // vintf
+        "org.lineageos.device.gralloc.minigbm_upstream.rc", // init_rc
     ],
     overrides: [
-        "android.hardware.graphics.allocator-service.minigbm",
+        "android.hardware.graphics.allocator-service.minigbm_upstream",
     ],
 
     soong_config_variables: {
         RELEASE_SM_OPEN_DECLARED_PASSTHROUGH_HAL: {
             defaults: [
-                "com.google.cf.gralloc-mapper-defaults",
+                "org.lineageos.device.gralloc.minigbm_upstream-mapper-defaults",
             ],
+            conditions_default: {},
         },
     },
 }
 
 apex_defaults {
-    name: "com.google.cf.gralloc-mapper-defaults",
+    name: "org.lineageos.device.gralloc.minigbm_upstream-mapper-defaults",
 
     // for app_process32 apps
     compile_multilib: "both",
 
     native_shared_libs: [
-        "mapper.minigbm",
+        "mapper.minigbm_upstream",
     ],
     prebuilts: [
-        "com.google.cf.gralloc-linker-config", // make the apex namespace visible for mapper library
-        "mapper.minigbm.xml", // vintf
+        "mapper.minigbm_upstream.xml", // vintf
+        "org.lineageos.device.gralloc.minigbm_upstream-linker-config", // make the apex namespace visible for mapper library
     ],
     overrides: [
-        "mapper.minigbm",
+        "mapper.minigbm_upstream",
     ],
 }
 
 linker_config {
-    name: "com.google.cf.gralloc-linker-config",
+    name: "org.lineageos.device.gralloc.minigbm_upstream-linker-config",
     src: "apex_linkerconfig.json",
     installable: false,
 }
 
 genrule {
-    name: "gen-com.google.cf.gralloc.rc",
-    srcs: [":allocator.minigbm.rc"],
-    out: ["com.google.cf.gralloc.rc"],
-    cmd: "sed -E 's%/vendor/bin/%/apex/com.google.cf.gralloc/bin/%' $(in) > $(out)",
+    name: "gen-org.lineageos.device.gralloc.minigbm_upstream.rc",
+    srcs: [":allocator.minigbm_upstream.rc"],
+    out: ["org.lineageos.device.gralloc.minigbm_upstream.rc"],
+    cmd: "sed -E 's%/vendor/bin/%/apex/org.lineageos.device.gralloc/bin/%' $(in) > $(out)",
 }
 
 prebuilt_etc {
-    name: "com.google.cf.gralloc.rc",
-    src: ":gen-com.google.cf.gralloc.rc",
+    name: "org.lineageos.device.gralloc.minigbm_upstream.rc",
+    src: ":gen-org.lineageos.device.gralloc.minigbm_upstream.rc",
     installable: false,
 }
