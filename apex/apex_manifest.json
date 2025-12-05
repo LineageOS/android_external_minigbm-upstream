@@ -1,5 +1,5 @@
 {
-    "name": "com.google.cf.gralloc",
+    "name": "org.lineageos.device.gralloc",
     "version": 1,
     "vendorBootstrap": true
 }
