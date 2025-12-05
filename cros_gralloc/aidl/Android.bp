@@ -16,19 +16,19 @@
 package {
     // See: http://go/android-license-faq
     // A large-scale-change added 'default_applicable_licenses' to import
-    // all of the 'license_kinds' from "external_minigbm_license"
+    // all of the 'license_kinds' from "external_minigbm_license_upstream"
     // to get the below license kinds:
     //   SPDX-license-identifier-Apache-2.0
     //   SPDX-license-identifier-BSD
-    default_applicable_licenses: ["external_minigbm_license"],
+    default_applicable_licenses: ["external_minigbm_license_upstream"],
 }
 
 cc_binary {
-    name: "android.hardware.graphics.allocator-service.minigbm",
-    defaults: ["minigbm_cros_gralloc_defaults"],
+    name: "android.hardware.graphics.allocator-service.minigbm_upstream",
+    defaults: ["minigbm_cros_gralloc_defaults_upstream"],
     relative_install_path: "hw",
-    init_rc: ["allocator.rc"],
-    vintf_fragments: ["allocator.xml"],
+    init_rc: ["allocator.minigbm_upstream.rc"],
+    vintf_fragments: ["allocator.minigbm_upstream.xml"],
     vendor: true,
     shared_libs: [
         "android.hardware.graphics.allocator-V3-ndk",
@@ -38,8 +38,8 @@ cc_binary {
         "libgralloctypes",
         "libhidlbase",
         "liblog",
-        "libminigbm_gralloc",
-        "libminigbm_gralloc4_utils",
+        "libminigbm_gralloc4_utils_upstream",
+        "libminigbm_gralloc_upstream",
     ],
     static_libs: [
         "libaidlcommonsupport",
@@ -51,13 +51,13 @@ cc_binary {
 }
 
 filegroup {
-    name: "allocator.minigbm.rc",
-    srcs: ["allocator.rc"],
+    name: "allocator.minigbm_upstream.rc",
+    srcs: ["allocator.minigbm_upstream.rc"],
 }
 
 prebuilt_etc {
-    name: "allocator.minigbm.xml",
-    src: "allocator.xml",
+    name: "allocator.minigbm_upstream.xml",
+    src: "allocator.minigbm_upstream.xml",
     sub_dir: "vintf",
     installable: false,
 }
