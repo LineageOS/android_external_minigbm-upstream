@@ -107,6 +107,9 @@ cc_defaults {
         "mt8188": mediatek_cflags + ["-DMTK_MT8188G"],
         "mt8196": mediatek_cflags + ["-DMTK_MT8196"],
         default: [],
+    }) + select(soong_config_variable("minigbm_upstream", "cflags"), {
+        any @ flag_val: flag_val,
+        default: [],
     }),
 
     product_variables: {
