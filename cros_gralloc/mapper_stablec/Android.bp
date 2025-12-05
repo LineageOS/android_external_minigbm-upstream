@@ -16,20 +16,20 @@
 package {
     // See: http://go/android-license-faq
     // A large-scale-change added 'default_applicable_licenses' to import
-    // all of the 'license_kinds' from "external_minigbm_license"
+    // all of the 'license_kinds' from "external_minigbm_license_upstream"
     // to get the below license kinds:
     //   SPDX-license-identifier-Apache-2.0
     //   SPDX-license-identifier-BSD
-    default_applicable_licenses: ["external_minigbm_license"],
+    default_applicable_licenses: ["external_minigbm_license_upstream"],
 }
 
 cc_library_shared {
-    name: "mapper.minigbm",
-    defaults: ["minigbm_gralloc4_common_defaults"],
-    vintf_fragments: ["mapper.minigbm.xml"],
+    name: "mapper.minigbm_upstream",
+    defaults: ["minigbm_gralloc4_common_defaults_upstream"],
+    vintf_fragments: ["mapper.minigbm_upstream.xml"],
     shared_libs: [
         "android.hardware.graphics.allocator-V2-ndk",
-        "libminigbm_gralloc",
+        "libminigbm_gralloc_upstream",
     ],
     header_libs: [
         "libbase_headers",
@@ -37,15 +37,15 @@ cc_library_shared {
         "libimapper_stablec",
     ],
     srcs: [
-        ":minigbm_gralloc4_mapper_files",
+        ":minigbm_gralloc4_mapper_files_upstream",
         "Mapper.cpp",
     ],
     cpp_std: "c++20",
 }
 
 prebuilt_etc {
-    name: "mapper.minigbm.xml",
-    src: "mapper.minigbm.xml",
+    name: "mapper.minigbm_upstream.xml",
+    src: "mapper.minigbm_upstream.xml",
     sub_dir: "vintf",
     installable: false,
 }

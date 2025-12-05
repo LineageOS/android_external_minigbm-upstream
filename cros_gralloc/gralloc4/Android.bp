@@ -16,15 +16,15 @@
 package {
     // See: http://go/android-license-faq
     // A large-scale-change added 'default_applicable_licenses' to import
-    // all of the 'license_kinds' from "external_minigbm_license"
+    // all of the 'license_kinds' from "external_minigbm_license_upstream"
     // to get the below license kinds:
     //   SPDX-license-identifier-Apache-2.0
     //   SPDX-license-identifier-BSD
-    default_applicable_licenses: ["external_minigbm_license"],
+    default_applicable_licenses: ["external_minigbm_license_upstream"],
 }
 
 filegroup {
-    name: "minigbm_gralloc4_mapper_files",
+    name: "minigbm_gralloc4_mapper_files_upstream",
     srcs: [
         "CrosGralloc4Mapper.cc",
         "CrosGralloc4Utils.cc",
@@ -32,8 +32,8 @@ filegroup {
 }
 
 cc_library {
-    name: "libminigbm_gralloc4_utils",
-    defaults: ["minigbm_cros_gralloc_defaults"],
+    name: "libminigbm_gralloc4_utils_upstream",
+    defaults: ["minigbm_cros_gralloc_defaults_upstream"],
     vendor: true,
     srcs: [
         "CrosGralloc4Utils.cc",
@@ -42,13 +42,13 @@ cc_library {
         "android.hardware.graphics.mapper@4.0",
         "libgralloctypes",
         "libhidlbase",
-        "libminigbm_gralloc",
+        "libminigbm_gralloc_upstream",
     ],
 }
 
 cc_defaults {
-    name: "minigbm_gralloc4_common_defaults",
-    defaults: ["minigbm_cros_gralloc_defaults"],
+    name: "minigbm_gralloc4_common_defaults_upstream",
+    defaults: ["minigbm_cros_gralloc_defaults_upstream"],
 
     shared_libs: [
         "android.hardware.graphics.mapper@4.0",
