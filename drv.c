@@ -48,6 +48,7 @@ extern const struct backend backend_vmwgfx;
 #endif
 
 // Dumb / generic drivers
+extern const struct backend backend_dumb_generic;
 extern const struct backend backend_evdi;
 extern const struct backend backend_marvell;
 extern const struct backend backend_mediatek;
@@ -118,7 +119,9 @@ static const struct backend *drv_get_backend(int fd)
 	}
 
 	drmFreeVersion(drm_version);
-	return NULL;
+
+	drv_loge("no matching backend, using dumb backend as fallback\n");
+	return &backend_dumb_generic;
 }
 
 struct driver *drv_create(int fd, const struct backend *backend)
