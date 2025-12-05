@@ -52,7 +52,7 @@ cc_binary {
 
 filegroup {
     name: "allocator.minigbm.rc",
-    srcs: ["allocator.rc"]
+    srcs: ["allocator.rc"],
 }
 
 prebuilt_etc {
