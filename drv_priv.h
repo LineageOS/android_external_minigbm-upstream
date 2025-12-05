@@ -79,6 +79,7 @@ struct driver {
 };
 
 struct backend {
+	bool is_generic_backend;
 	const char *name;
 	void (*preload)(bool load);
 	int (*init)(struct driver *drv);

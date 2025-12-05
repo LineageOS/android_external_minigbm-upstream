@@ -12,6 +12,7 @@
 
 #define INIT_DUMB_DRIVER_WITH_NAME(driver, _name)                                                  \
 	const struct backend backend_##driver = {                                                  \
+		.is_generic_backend = true,                                                        \
 		.name = _name,                                                                     \
 		.init = dumb_driver_init,                                                          \
 		.bo_create = drv_dumb_bo_create,                                                   \

@@ -112,29 +112,52 @@ void drv_preload(bool load)
 static const struct backend *drv_get_backend(int fd)
 {
 #ifdef DRV_GBM_MESA
-	return &backend_gbm_mesa;
-#else
+	bool graphics_is_mesa = false;
+#endif
+	const char *propval;
 	drmVersionPtr drm_version;
 	unsigned int i;
 
-	drm_version = drmGetVersion(fd);
+	// Try hardware-specific backends first
+	if (fd >= 0) {
+		drm_version = drmGetVersion(fd);
 
-	if (!drm_version)
-		return NULL;
+		if (!drm_version)
+			return NULL;
 
-	for (i = 0; i < ARRAY_SIZE(drv_backend_list); i++) {
-		const struct backend *b = drv_backend_list[i];
-		if (!strcmp(drm_version->name, b->name)) {
-			drmFreeVersion(drm_version);
-			return b;
+		for (i = 0; i < ARRAY_SIZE(drv_backend_list); i++) {
+			const struct backend *b = drv_backend_list[i];
+			if (!strcmp(drm_version->name, b->name) &&
+				!b->is_generic_backend) {
+				drmFreeVersion(drm_version);
+				return b;
+			}
 		}
+
+		drmFreeVersion(drm_version);
 	}
 
-	drmFreeVersion(drm_version);
-
-	drv_loge("no matching backend, using dumb backend as fallback\n");
-	return &backend_dumb_generic;
+#ifdef DRV_GBM_MESA
+	// Fallback to gbm_mesa backend if mesa graphics is used
+	propval = drv_get_os_option("ro.hardware.egl");
+	graphics_is_mesa |= propval && !strcmp(propval, "mesa");
+	propval = drv_get_os_option("ro.hardware.vulkan");
+	graphics_is_mesa |= propval && strcmp(propval, "pastel");
+	if (graphics_is_mesa) {
+		drv_loge("no matching backend, using gbm_mesa backend as fallback\n");
+		if (fd >= 0)
+			close(fd);
+		return &backend_gbm_mesa;
+	}
 #endif
+
+	// Fallback to dumb backend if DRM device is opened
+	if (fd >= 0) {
+		drv_loge("no matching backend, using dumb backend as fallback\n");
+		return &backend_dumb_generic;
+	}
+
+	return NULL;
 }
 
 struct driver *drv_create(int fd, const struct backend *backend)
