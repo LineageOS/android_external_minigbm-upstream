@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6eb44e36_c5a82516",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1391
+      },
+      "writtenOn": "2025-12-08T11:08:27Z",
+      "side": 1,
+      "message": "Rather pick https://github.com/raspberry-vanilla/android_external_minigbm/commit/0e0495a05c0528ac195acea2f59e363b9cb76c6c instead if this is still needed.\n\nI\u0027m not sure what the issue was but somehow \u0027NDEBUG 1\u0027 didn\u0027t get used though it should be already set. In any case, this now works in android-16.0.0_r4 and neither this (or the more recent version) is no longer needed.",
+      "revId": "fc338bd2f601c63265efa9962c928805bd2fc012",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    }
+  ]
+}
