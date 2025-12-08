@@ -363,18 +363,11 @@ int gbm_mesa_bo_create(struct bo *bo, uint32_t width, uint32_t height, uint32_t 
 		.use_scanout = (use_flags & (BO_USE_SCANOUT | BO_USE_CURSOR)) != 0,
 	};
 
-	/* Alignment for RPI4 CSI camera. Since we do not care about other cameras, keep this
-	 * globally for now.
+	/* Alignment for camera and hardware video decoder/encoder.
+	 * Initially made for Raspberry Pi 4, might be useful for the others too.
 	 * TODO: Create/use constraints table for camera/codecs */
-	if (use_flags & (BO_USE_CAMERA_READ | BO_USE_CAMERA_WRITE)) {
-		scanout_strong = true;
-		alloc_args.use_scanout = true;
-		alloc_args.width = ALIGN(alloc_args.width, 32);
-		size_align = 4096;
-	}
-
-	/* Raspberry Pi hardware decoder/encoder */
-	if (use_flags & (BO_USE_HW_VIDEO_DECODER | BO_USE_HW_VIDEO_ENCODER)) {
+	if (use_flags & (BO_USE_CAMERA_READ | BO_USE_CAMERA_WRITE | BO_USE_HW_VIDEO_DECODER |
+			 BO_USE_HW_VIDEO_ENCODER)) {
 		scanout_strong = true;
 		alloc_args.use_scanout = true;
 		alloc_args.width = ALIGN(alloc_args.width, 32);
