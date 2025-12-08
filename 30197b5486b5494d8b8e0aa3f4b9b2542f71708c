@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "344d5124_e374b030",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1391
+      },
+      "writtenOn": "2025-12-08T11:09:22Z",
+      "side": 1,
+      "message": "I\u0027m not aware of any reason why this would need to be ifdef\u0027ed out. This is useful/needed on any hardware the has hw video decoder/encoder (similar to the camera constraints above). You could remove the Raspberry Pi specific comments from here (and from the camera constraints above) as this applies to other hw as well.",
+      "revId": "30197b5486b5494d8b8e0aa3f4b9b2542f71708c",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    }
+  ]
+}
