@@ -114,6 +114,21 @@ static const struct backend *drv_get_backend(int fd)
 	drmVersionPtr drm_version;
 	unsigned int i;
 
+	propval = drv_get_os_option("vendor.minigbm.generic_backend");
+	if (propval != NULL) {
+		if (!strcmp(prop_buf, "dumb_generic")) {
+			return &backend_dumb_generic;
+		}
+		if (!strcmp(propval, "gbm_mesa")) {
+#ifdef DRV_GBM_MESA
+			return &backend_gbm_mesa;
+#else
+			drv_loge("gbm_mesa backend is not compiled in\n");
+#endif
+		}
+		drv_loge("Invalid generic backend specified\n");
+	}
+
 	// Try hardware-specific backends first
 	if (fd >= 0) {
 		drm_version = drmGetVersion(fd);
