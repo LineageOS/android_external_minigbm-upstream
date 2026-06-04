@@ -98,11 +98,14 @@ mediatek_cflags = [
     "-DHAS_DMABUF_SYSTEM_HEAP",
 ]
 
+rockchip_cflags = ["-DDRV_ROCKCHIP"]
+vc4_cflags = ["-DDRV_VC4"]
+
 vmwgfx_cflags = ["-DDRV_VMWGFX"]
 
 // gbm_mesa is excluded, as it requires more configuration
-all_cflags = generic_cflags + intel_cflags + meson_cflags + msm_cflags + mediatek_cflags + vmwgfx_cflags
-all_arm_cflags = generic_cflags + meson_cflags + msm_cflags + mediatek_cflags + vmwgfx_cflags
+all_cflags = generic_cflags + intel_cflags + meson_cflags + msm_cflags + mediatek_cflags + rockchip_cflags + vc4_cflags + vmwgfx_cflags
+all_arm_cflags = generic_cflags + meson_cflags + msm_cflags + mediatek_cflags + rockchip_cflags + vc4_cflags + vmwgfx_cflags
 all_x86_cflags = generic_cflags + intel_cflags + vmwgfx_cflags
 
 cc_defaults {
@@ -128,6 +131,8 @@ cc_defaults {
         "mt8186": mediatek_cflags + ["-DMTK_MT8186"],
         "mt8188": mediatek_cflags + ["-DMTK_MT8188G"],
         "mt8196": mediatek_cflags + ["-DMTK_MT8196"],
+        "rockchip": rockchip_cflags,
+        "vc4": vc4_cflags,
         "vmwgfx": vmwgfx_cflags,
         default: [],
     }) + select(soong_config_variable("minigbm_upstream", "cflags"), {
