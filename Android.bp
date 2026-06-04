@@ -102,6 +102,8 @@ vmwgfx_cflags = ["-DDRV_VMWGFX"]
 
 // gbm_mesa is excluded, as it requires more configuration
 all_cflags = generic_cflags + intel_cflags + meson_cflags + msm_cflags + mediatek_cflags + vmwgfx_cflags
+all_arm_cflags = generic_cflags + meson_cflags + msm_cflags + mediatek_cflags + vmwgfx_cflags
+all_x86_cflags = generic_cflags + intel_cflags + vmwgfx_cflags
 
 cc_defaults {
     name: "minigbm_defaults_upstream",
@@ -117,6 +119,8 @@ cc_defaults {
         "-Wsign-compare",
     ] + select(soong_config_variable("minigbm_upstream", "platform"), {
         "all": all_cflags,
+        "all_arm": all_arm_cflags,
+        "all_x86": all_x86_cflags,
         "generic": generic_cflags,
         "intel": intel_cflags,
         "meson": meson_cflags,
