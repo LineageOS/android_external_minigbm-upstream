@@ -222,6 +222,8 @@ struct driver *drv_create(int fd, const struct backend *backend)
 		}
 	}
 
+	drv_logi("Loaded driver %s\n", drv_get_name(drv));
+
 	return drv;
 
 free_mappings:
