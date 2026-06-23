@@ -108,6 +108,7 @@ static struct driver *init_try_node_path(char const *node)
 	if (!drv)
 		close(fd);
 
+	drv_logi("Loaded driver %s on path %s\n", drv_get_name(drv), node);
 	return drv;
 }
 
