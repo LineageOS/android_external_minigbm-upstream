@@ -93,17 +93,12 @@ std::shared_ptr<cros_gralloc_driver> cros_gralloc_driver::get_instance()
 	return s_instance;
 }
 
-static struct driver *init_try_node(int idx, char const *str)
+static struct driver *init_try_node_path(char const *node)
 {
 	int fd;
-	char *node;
 	struct driver *drv;
 
-	if (asprintf(&node, str, DRM_DIR_NAME, idx) < 0)
-		return NULL;
-
 	fd = open(node, O_RDWR, 0);
-	free(node);
 
 	if (fd < 0)
 		return NULL;
@@ -112,6 +107,19 @@ static struct driver *init_try_node(int idx, char const *str)
 	if (!drv)
 		close(fd);
 
+	return drv;
+}
+
+static struct driver *init_try_node(int idx, char const *str)
+{
+	char *node;
+	struct driver *drv;
+
+	if (asprintf(&node, str, DRM_DIR_NAME, idx) < 0)
+		return NULL;
+
+	drv = init_try_node_path(node);
+	free(node);
 	return drv;
 }
 
@@ -132,6 +140,15 @@ static struct driver *init_try_nodes()
 	uint32_t max_render_node = (min_render_node + num_nodes);
 	uint32_t min_card_node = DRM_CARD_NODE_START;
 	uint32_t max_card_node = (min_card_node + num_nodes);
+
+#ifdef __ANDROID__
+	char propval[PROPERTY_VALUE_MAX];
+	if (property_get("vendor.minigbm.device", propval, NULL) > 1) {
+		drv = init_try_node_path(propval);
+		if (drv)
+			return drv;
+	}
+#endif
 
 	// Try render nodes...
 	for (uint32_t i = min_render_node; i < max_render_node; i++) {
