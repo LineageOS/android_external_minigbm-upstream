@@ -110,7 +110,6 @@ struct backend {
 	int (*resource_info)(struct bo *bo, uint32_t strides[DRV_MAX_PLANES],
 			     uint32_t offsets[DRV_MAX_PLANES], uint64_t *format_modifier);
 	uint32_t (*get_max_texture_2d_size)(struct driver *drv);
-	bool (*is_protected_usage_permitted)(struct driver *drv, uint64_t use_flags);
 };
 
 // clang-format off
