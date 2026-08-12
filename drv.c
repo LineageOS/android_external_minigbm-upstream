@@ -907,11 +907,3 @@ uint32_t drv_get_max_texture_2d_size(struct driver *drv)
 
 	return UINT32_MAX;
 }
-
-bool drv_is_protected_usage_permitted(struct driver *drv, uint64_t use_flags)
-{
-	if (drv->backend->is_protected_usage_permitted)
-		return drv->backend->is_protected_usage_permitted(drv, use_flags);
-
-	return true;
-}

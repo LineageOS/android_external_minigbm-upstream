@@ -263,8 +263,6 @@ int drv_resource_info(struct bo *bo, uint32_t strides[DRV_MAX_PLANES],
 
 uint32_t drv_get_max_texture_2d_size(struct driver *drv);
 
-bool drv_is_protected_usage_permitted(struct driver *drv, uint64_t use_flags);
-
 enum drv_log_level {
 	DRV_LOGV,
 	DRV_LOGD,

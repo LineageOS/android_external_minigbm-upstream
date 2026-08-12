@@ -220,9 +220,6 @@ bool cros_gralloc_driver::get_resolved_format_and_use_flags(
 	if (!combo)
 		return false;
 
-	if (!drv_is_protected_usage_permitted(drv_.get(), resolved_use_flags))
-		return false;
-
 	*out_format = resolved_format;
 	*out_use_flags = resolved_use_flags;
 	return true;

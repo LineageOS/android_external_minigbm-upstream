@@ -15,11 +15,6 @@
 #include <unistd.h>
 #include <xf86drm.h>
 
-#ifdef __ANDROID__
-#include <android/binder_ibinder.h>
-#include <cutils/android_filesystem_config.h>
-#endif
-
 #include "drv_helpers.h"
 #include "drv_priv.h"
 
@@ -845,19 +840,6 @@ static int xe_bo_flush(struct bo *bo, struct mapping *mapping)
 	return 0;
 }
 
-#ifdef __ANDROID__
-static bool xe_is_protected_usage_permitted(struct driver *drv, uint64_t use_flags)
-{
-	if ((use_flags & BO_USE_PROTECTED) &&
-	    ((use_flags & BO_USE_RENDERING) ||
-	     (use_flags & BO_USE_GPU_DATA_BUFFER))) {
-		uid_t uid = AIBinder_getCallingUid();
-		return uid == AID_SYSTEM;
-	}
-	return true;
-}
-#endif
-
 const struct backend backend_xe = {
 	.name = "xe",
 	.init = xe_init,
@@ -872,9 +854,6 @@ const struct backend backend_xe = {
 	.bo_export = drv_prime_bo_export,
 	.bo_flush = xe_bo_flush,
 	.resolve_format_and_use_flags = drv_resolve_format_and_use_flags_helper,
-#ifdef __ANDROID__
-	.is_protected_usage_permitted = xe_is_protected_usage_permitted,
-#endif
 };
 
 #endif
