@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d6a43f66_399e7eec",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 32245
+      },
+      "writtenOn": "2026-08-12T11:59:00Z",
+      "side": 1,
+      "message": "```\nexternal/minigbm-upstream/cros_gralloc/cros_gralloc_helpers.cc:96:7: error: duplicate case value \u002760\u0027\n   96 |         case HAL_PIXEL_FORMAT_YCBCR_P210:\n      |              ^\n```",
+      "revId": "c4fcd4fcfb9eb2dbbddee881aa3dff284d779e03",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    }
+  ]
+}
