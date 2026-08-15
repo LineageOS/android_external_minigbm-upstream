@@ -22,6 +22,30 @@
       },
       "revId": "5ca8bc5253a697f0580277705a8c82ed420c4d3a",
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "533730e5_52bf8ad5",
+        "filename": "apex/Android.bp",
+        "patchSetId": 3
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 32245
+      },
+      "writtenOn": "2026-08-15T11:58:31Z",
+      "side": 1,
+      "message": "because it\u0027s not platform thing\n\noh yeah, it initially came from a device tree, I should\u0027ve renamed it to \"hardware\" when importing this...",
+      "parentUuid": "48ebc45f_0864600b",
+      "range": {
+        "startLine": 33,
+        "startChar": 25,
+        "endLine": 33,
+        "endChar": 31
+      },
+      "revId": "5ca8bc5253a697f0580277705a8c82ed420c4d3a",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
     }
   ]
 }
