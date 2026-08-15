@@ -1,5 +1,5 @@
 {
-    "name": "org.lineageos.device.gralloc",
+    "name": "org.lineageos.hardware.gralloc",
     "version": 1,
     "vendorBootstrap": true
 }
