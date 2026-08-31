@@ -30,7 +30,7 @@ soong_config_module_type {
 }
 
 minigbm_upstream_apex {
-    name: "org.lineageos.hardware.gralloc.minigbm_upstream",
+    name: "com.android.hardware.graphics.allocator.minigbm_upstream",
     manifest: "apex_manifest.json",
     key: "com.android.hardware.key",
     certificate: ":com.android.hardware.certificate",
@@ -43,7 +43,7 @@ minigbm_upstream_apex {
     ],
     prebuilts: [
         "allocator.minigbm_upstream.xml", // vintf
-        "org.lineageos.hardware.gralloc.minigbm_upstream.rc", // init_rc
+        "com.android.hardware.graphics.allocator.minigbm_upstream.rc", // init_rc
     ],
     overrides: [
         "android.hardware.graphics.allocator-service.minigbm_upstream",
@@ -52,7 +52,7 @@ minigbm_upstream_apex {
     soong_config_variables: {
         RELEASE_SM_OPEN_DECLARED_PASSTHROUGH_HAL: {
             defaults: [
-                "org.lineageos.hardware.gralloc.minigbm_upstream-mapper-defaults",
+                "com.android.hardware.graphics.allocator.minigbm_upstream-mapper-defaults",
             ],
             conditions_default: {},
         },
@@ -60,7 +60,7 @@ minigbm_upstream_apex {
 }
 
 apex_defaults {
-    name: "org.lineageos.hardware.gralloc.minigbm_upstream-mapper-defaults",
+    name: "com.android.hardware.graphics.allocator.minigbm_upstream-mapper-defaults",
 
     // for app_process32 apps
     compile_multilib: "both",
@@ -70,7 +70,7 @@ apex_defaults {
     ],
     prebuilts: [
         "mapper.minigbm_upstream.xml", // vintf
-        "org.lineageos.hardware.gralloc.minigbm_upstream-linker-config", // make the apex namespace visible for mapper library
+        "com.android.hardware.graphics.allocator.minigbm_upstream-linker-config", // make the apex namespace visible for mapper library
     ],
     overrides: [
         "mapper.minigbm_upstream",
@@ -78,20 +78,20 @@ apex_defaults {
 }
 
 linker_config {
-    name: "org.lineageos.hardware.gralloc.minigbm_upstream-linker-config",
+    name: "com.android.hardware.graphics.allocator.minigbm_upstream-linker-config",
     src: "apex_linkerconfig.json",
     installable: false,
 }
 
 genrule {
-    name: "gen-org.lineageos.hardware.gralloc.minigbm_upstream.rc",
+    name: "gen-com.android.hardware.graphics.allocator.minigbm_upstream.rc",
     srcs: [":allocator.minigbm_upstream.rc"],
-    out: ["org.lineageos.hardware.gralloc.minigbm_upstream.rc"],
-    cmd: "sed -E 's%/vendor/bin/%/apex/org.lineageos.hardware.gralloc/bin/%' $(in) > $(out)",
+    out: ["com.android.hardware.graphics.allocator.minigbm_upstream.rc"],
+    cmd: "sed -E 's%/vendor/bin/%/apex/com.android.hardware.graphics.allocator/bin/%' $(in) > $(out)",
 }
 
 prebuilt_etc {
-    name: "org.lineageos.hardware.gralloc.minigbm_upstream.rc",
-    src: ":gen-org.lineageos.hardware.gralloc.minigbm_upstream.rc",
+    name: "com.android.hardware.graphics.allocator.minigbm_upstream.rc",
+    src: ":gen-com.android.hardware.graphics.allocator.minigbm_upstream.rc",
     installable: false,
 }

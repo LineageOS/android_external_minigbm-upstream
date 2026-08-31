@@ -1,5 +1,5 @@
 {
-    "name": "org.lineageos.hardware.gralloc",
+    "name": "com.android.hardware.graphics.allocator",
     "version": 1,
     "vendorBootstrap": true
 }
