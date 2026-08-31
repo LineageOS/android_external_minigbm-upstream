@@ -71,7 +71,7 @@ static bool exist_map_handle(struct bo_metadata *meta)
 static uint64_t get_map_handle(struct bo_metadata *meta)
 {
 	uint64_t map_handle = meta->map_info;
-	return (map_handle << 32) & meta->blob_id;
+	return (map_handle << 32) | meta->blob_id;
 }
 
 static uint32_t drm_format_to_svga_format(uint32_t format)
