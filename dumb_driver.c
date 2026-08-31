@@ -5,6 +5,12 @@
  */
 
 #include <errno.h>
+#include <fcntl.h>
+#include <sys/mman.h>
+#include <unistd.h>
+
+#include <xf86drm.h>
+#include <xf86drmMode.h>
 
 #include "drv_helpers.h"
 #include "drv_priv.h"
@@ -34,8 +40,87 @@ static const uint32_t scanout_render_formats[] = { DRM_FORMAT_ARGB8888, DRM_FORM
 static const uint32_t texture_only_formats[] = { DRM_FORMAT_R8, DRM_FORMAT_NV12, DRM_FORMAT_NV21,
 						 DRM_FORMAT_YVU420, DRM_FORMAT_YVU420_ANDROID };
 
+static int dumb_driver_probe(struct driver *drv)
+{
+	uint64_t dumb_cap = 0;
+	uint64_t prime_cap = 0;
+	uint32_t handle = 0;
+	uint32_t imported_handle = 0;
+	uint32_t pitch = 0;
+	uint64_t size = 0;
+	uint64_t map_offset = 0;
+	int prime_fd = -1;
+	void *map = MAP_FAILED;
+	int ret = -ENODEV;
+
+	if (drv->fd < 0 || drmGetCap(drv->fd, DRM_CAP_DUMB_BUFFER, &dumb_cap) || !dumb_cap ||
+	    drmGetCap(drv->fd, DRM_CAP_PRIME, &prime_cap) ||
+	    (prime_cap & (DRM_PRIME_CAP_IMPORT | DRM_PRIME_CAP_EXPORT)) !=
+		    (DRM_PRIME_CAP_IMPORT | DRM_PRIME_CAP_EXPORT)) {
+		drv_loge("dumb backend requires dumb buffers and PRIME import/export\n");
+		return -ENODEV;
+	}
+
+	if (drmModeCreateDumbBuffer(drv->fd, 64, 64, 32, 0, &handle, &pitch, &size)) {
+		drv_loge("failed to create probe dumb buffer\n");
+		goto out;
+	}
+	if (pitch < 64 * 4 || size < (uint64_t)pitch * 64) {
+		drv_loge("probe dumb buffer has an invalid pitch or size\n");
+		goto out;
+	}
+
+	if (drmPrimeHandleToFD(drv->fd, handle, DRM_CLOEXEC | DRM_RDWR, &prime_fd) &&
+	    drmPrimeHandleToFD(drv->fd, handle, DRM_CLOEXEC, &prime_fd)) {
+		drv_loge("failed to export probe dumb buffer\n");
+		goto out;
+	}
+
+	if (lseek(prime_fd, 0, SEEK_END) < (off_t)size) {
+		drv_loge("probe dma-buf does not expose its allocation size\n");
+		goto out;
+	}
+
+	if (drmPrimeFDToHandle(drv->fd, prime_fd, &imported_handle)) {
+		drv_loge("failed to import probe dma-buf\n");
+		goto out;
+	}
+
+	if (drmModeMapDumbBuffer(drv->fd, handle, &map_offset)) {
+		drv_loge("failed to get probe dumb buffer map offset\n");
+		goto out;
+	}
+
+	map = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, drv->fd, map_offset);
+	if (map == MAP_FAILED) {
+		drv_loge("failed to map probe dumb buffer\n");
+		goto out;
+	}
+
+	((volatile unsigned char *)map)[0] = 0;
+	((volatile unsigned char *)map)[size - 1] = 0;
+	ret = 0;
+
+out:
+	if (map != MAP_FAILED)
+		munmap(map, size);
+	if (imported_handle && imported_handle != handle)
+		drmCloseBufferHandle(drv->fd, imported_handle);
+	if (prime_fd >= 0)
+		close(prime_fd);
+	if (handle)
+		drmModeDestroyDumbBuffer(drv->fd, handle);
+
+	return ret;
+}
+
 static int dumb_driver_init(struct driver *drv)
 {
+	int ret = dumb_driver_probe(drv);
+
+	if (ret)
+		return ret;
+
 	drv_add_combinations(drv, scanout_render_formats, ARRAY_SIZE(scanout_render_formats),
 			     &LINEAR_METADATA, BO_USE_RENDER_MASK | BO_USE_SCANOUT);
 
