@@ -13,6 +13,8 @@
 #include <sys/mman.h>
 #include <unistd.h>
 
+#include <xf86drm.h>
+
 #include "drv_helpers.h"
 #include "drv_priv.h"
 #include "external/dma-buf.h"
@@ -217,7 +219,7 @@ static int staging_bo_flush(struct bo *bo, struct mapping *mapping)
 
 static int staging_init(struct driver *drv)
 {
-	int heap_fd = open("/dev/dma_heap/system", O_RDWR | O_CLOEXEC);
+	int heap_fd;
 	struct staging_priv *priv;
 	struct dma_heap_allocation_data args = {
 		.len = 4096,
@@ -229,6 +231,14 @@ static int staging_init(struct driver *drv)
 	void *map;
 	int ret;
 
+	/* Opening a primary node can make the allocator DRM master. Staging BOs come from the system
+	 * DMA heap, so retaining master would only prevent the composer from controlling KMS. */
+	if (drmIsMaster(drv->fd) == 1 && drmDropMaster(drv->fd)) {
+		drv_loge("failed to drop staging DRM master: %s\n", strerror(errno));
+		return -errno;
+	}
+
+	heap_fd = open("/dev/dma_heap/system", O_RDWR | O_CLOEXEC);
 	if (heap_fd < 0) {
 		drv_loge("staging backend requires /dev/dma_heap/system: %s\n", strerror(errno));
 		return -errno;
@@ -294,8 +304,9 @@ static int staging_init(struct driver *drv)
 		close(priv->heap_fd);
 		free(priv);
 		drv->priv = NULL;
+		return ret;
 	}
-	return ret;
+	return 0;
 }
 
 static void staging_close(struct driver *drv)
