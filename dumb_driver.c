@@ -33,25 +33,20 @@
 
 #define INIT_DUMB_DRIVER(driver) INIT_DUMB_DRIVER_WITH_NAME(driver, #driver)
 
-static const uint32_t scanout_render_formats[] = { DRM_FORMAT_ARGB8888, DRM_FORMAT_XRGB8888,
-						   DRM_FORMAT_ABGR8888, DRM_FORMAT_XBGR8888,
-						   DRM_FORMAT_BGR888,	DRM_FORMAT_RGB565 };
+static const uint32_t scanout_render_formats_32[] = { DRM_FORMAT_ARGB8888, DRM_FORMAT_XRGB8888,
+						      DRM_FORMAT_ABGR8888, DRM_FORMAT_XBGR8888 };
+
+static const uint32_t scanout_render_formats_24[] = { DRM_FORMAT_BGR888 };
+
+static const uint32_t scanout_render_formats_16[] = { DRM_FORMAT_RGB565 };
 
 static const uint32_t texture_only_formats[] = { DRM_FORMAT_R8, DRM_FORMAT_NV12, DRM_FORMAT_NV21,
 						 DRM_FORMAT_YVU420, DRM_FORMAT_YVU420_ANDROID };
 
-static int dumb_driver_probe(struct driver *drv)
+static int dumb_driver_check_caps(struct driver *drv)
 {
 	uint64_t dumb_cap = 0;
 	uint64_t prime_cap = 0;
-	uint32_t handle = 0;
-	uint32_t imported_handle = 0;
-	uint32_t pitch = 0;
-	uint64_t size = 0;
-	uint64_t map_offset = 0;
-	int prime_fd = -1;
-	void *map = MAP_FAILED;
-	int ret = -ENODEV;
 
 	if (drv->fd < 0 || drmGetCap(drv->fd, DRM_CAP_DUMB_BUFFER, &dumb_cap) || !dumb_cap ||
 	    drmGetCap(drv->fd, DRM_CAP_PRIME, &prime_cap) ||
@@ -61,12 +56,26 @@ static int dumb_driver_probe(struct driver *drv)
 		return -ENODEV;
 	}
 
-	if (drmModeCreateDumbBuffer(drv->fd, 64, 64, 32, 0, &handle, &pitch, &size)) {
-		drv_loge("failed to create probe dumb buffer\n");
+	return 0;
+}
+
+static int dumb_driver_probe(struct driver *drv, uint32_t bpp)
+{
+	uint32_t handle = 0;
+	uint32_t imported_handle = 0;
+	uint32_t pitch = 0;
+	uint64_t size = 0;
+	uint64_t map_offset = 0;
+	int prime_fd = -1;
+	void *map = MAP_FAILED;
+	int ret = -ENODEV;
+
+	if (drmModeCreateDumbBuffer(drv->fd, 64, 64, bpp, 0, &handle, &pitch, &size)) {
+		drv_loge("failed to create %u-bpp probe dumb buffer\n", bpp);
 		goto out;
 	}
-	if (pitch < 64 * 4 || size < (uint64_t)pitch * 64) {
-		drv_loge("probe dumb buffer has an invalid pitch or size\n");
+	if (pitch < DIV_ROUND_UP(64 * bpp, 8) || size < (uint64_t)pitch * 64) {
+		drv_loge("%u-bpp probe dumb buffer has an invalid pitch or size\n", bpp);
 		goto out;
 	}
 
@@ -116,25 +125,42 @@ out:
 
 static int dumb_driver_init(struct driver *drv)
 {
-	int ret = dumb_driver_probe(drv);
+	int ret = dumb_driver_check_caps(drv);
 
 	if (ret)
 		return ret;
 
-	drv_add_combinations(drv, scanout_render_formats, ARRAY_SIZE(scanout_render_formats),
+	ret = dumb_driver_probe(drv, 32);
+	if (ret)
+		return ret;
+
+	drv_add_combinations(drv, scanout_render_formats_32, ARRAY_SIZE(scanout_render_formats_32),
 			     &LINEAR_METADATA, BO_USE_RENDER_MASK | BO_USE_SCANOUT);
 
-	drv_add_combinations(drv, texture_only_formats, ARRAY_SIZE(texture_only_formats),
-			     &LINEAR_METADATA, BO_USE_TEXTURE_MASK);
+	if (!dumb_driver_probe(drv, 24))
+		drv_add_combinations(drv, scanout_render_formats_24,
+				     ARRAY_SIZE(scanout_render_formats_24), &LINEAR_METADATA,
+				     BO_USE_RENDER_MASK | BO_USE_SCANOUT);
 
-	drv_modify_combination(drv, DRM_FORMAT_R8, &LINEAR_METADATA,
-			       BO_USE_HW_VIDEO_ENCODER | BO_USE_HW_VIDEO_DECODER |
-				   BO_USE_CAMERA_READ | BO_USE_CAMERA_WRITE |
-				   BO_USE_GPU_DATA_BUFFER | BO_USE_SENSOR_DIRECT_DATA);
-	drv_modify_combination(drv, DRM_FORMAT_NV12, &LINEAR_METADATA,
-			       BO_USE_HW_VIDEO_ENCODER | BO_USE_HW_VIDEO_DECODER |
-				   BO_USE_CAMERA_READ | BO_USE_CAMERA_WRITE);
-	drv_modify_combination(drv, DRM_FORMAT_NV21, &LINEAR_METADATA, BO_USE_HW_VIDEO_ENCODER);
+	if (!dumb_driver_probe(drv, 16))
+		drv_add_combinations(drv, scanout_render_formats_16,
+				     ARRAY_SIZE(scanout_render_formats_16), &LINEAR_METADATA,
+				     BO_USE_RENDER_MASK | BO_USE_SCANOUT);
+
+	if (!dumb_driver_probe(drv, 8)) {
+		drv_add_combinations(drv, texture_only_formats, ARRAY_SIZE(texture_only_formats),
+				     &LINEAR_METADATA, BO_USE_TEXTURE_MASK);
+
+		drv_modify_combination(drv, DRM_FORMAT_R8, &LINEAR_METADATA,
+				       BO_USE_HW_VIDEO_ENCODER | BO_USE_HW_VIDEO_DECODER |
+					   BO_USE_CAMERA_READ | BO_USE_CAMERA_WRITE |
+					   BO_USE_GPU_DATA_BUFFER | BO_USE_SENSOR_DIRECT_DATA);
+		drv_modify_combination(drv, DRM_FORMAT_NV12, &LINEAR_METADATA,
+				       BO_USE_HW_VIDEO_ENCODER | BO_USE_HW_VIDEO_DECODER |
+					   BO_USE_CAMERA_READ | BO_USE_CAMERA_WRITE);
+		drv_modify_combination(drv, DRM_FORMAT_NV21, &LINEAR_METADATA,
+				       BO_USE_HW_VIDEO_ENCODER);
+	}
 
 	return drv_modify_linear_combinations(drv);
 }
