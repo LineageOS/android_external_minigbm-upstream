@@ -130,6 +130,13 @@ static int dumb_driver_init(struct driver *drv)
 	if (ret)
 		return ret;
 
+	/* Opening a primary node can make the allocator DRM master. Dumb allocation, PRIME and
+	 * mapping do not require master, and retaining it prevents the composer from controlling KMS. */
+	if (drmIsMaster(drv->fd) == 1 && drmDropMaster(drv->fd)) {
+		drv_loge("failed to drop dumb backend DRM master: %s\n", strerror(errno));
+		return -errno;
+	}
+
 	ret = dumb_driver_probe(drv, 32);
 	if (ret)
 		return ret;
