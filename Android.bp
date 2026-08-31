@@ -47,6 +47,7 @@ filegroup {
         "mediatek.c",
         "msm.c",
         "rockchip.c",
+        "staging.c",
         "vc4.c",
         "virtgpu.c",
         "virtgpu_cross_domain.c",

@@ -71,6 +71,8 @@ extern const struct backend backend_tegra;
 extern const struct backend backend_virtgpu;
 extern const struct backend backend_udl;
 extern const struct backend backend_vkms;
+extern const struct backend backend_qxl;
+extern const struct backend backend_vboxvideo;
 
 extern const struct backend backend_mock;
 
@@ -96,7 +98,8 @@ static const struct backend *drv_backend_list[] = {
 	&backend_evdi,	    &backend_komeda,	&backend_marvell,   &backend_mediatek,
 	&backend_meson,	    &backend_nouveau,	&backend_nvidia,    &backend_radeon,
 	&backend_rockchip,  &backend_sun4i_drm, &backend_synaptics, &backend_tegra,
-	&backend_udl,       &backend_virtgpu,   &backend_vkms,      &backend_mock
+	&backend_udl,       &backend_virtgpu,   &backend_vkms,      &backend_qxl,
+	&backend_vboxvideo, &backend_mock
 };
 
 void drv_preload(bool load)
@@ -445,7 +448,8 @@ struct bo *drv_bo_create(struct driver *drv, uint32_t width, uint32_t height, ui
 		return NULL;
 	}
 
-	drv_bo_acquire(bo);
+	if (!is_test_alloc)
+		drv_bo_acquire(bo);
 
 	if (drv->log_bos)
 		drv_bo_log_info(bo, "legacy created");
