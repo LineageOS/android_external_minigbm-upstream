@@ -53,7 +53,7 @@ static bool staging_format_supported(uint32_t format, uint64_t use_flags)
 
 	for (size_t i = 0; i < ARRAY_SIZE(staging_render_formats); i++) {
 		if (format == staging_render_formats[i])
-			allowed = BO_USE_RENDER_MASK | BO_USE_SCANOUT;
+			allowed = BO_USE_RENDER_MASK | BO_USE_SCANOUT | BO_USE_CURSOR;
 	}
 	for (size_t i = 0; i < ARRAY_SIZE(staging_texture_formats); i++) {
 		if (format == staging_texture_formats[i])
@@ -128,6 +128,8 @@ static int staging_bo_import(struct bo *bo, struct drv_import_fd_data *data)
 {
 	int fd;
 	struct stat first;
+	struct bo expected = *bo;
+	uint64_t modifiers[] = { data->format_modifier };
 
 	if (data->fds[0] < 0 || data->offsets[0] ||
 	    (data->format_modifier != DRM_FORMAT_MOD_LINEAR &&
@@ -135,10 +137,19 @@ static int staging_bo_import(struct bo *bo, struct drv_import_fd_data *data)
 	    !staging_format_supported(data->format, data->use_flags) ||
 	    fstat(data->fds[0], &first))
 		return -EINVAL;
+	if (staging_bo_compute_metadata(&expected, data->width, data->height, data->format,
+					data->use_flags, modifiers, 1) ||
+	    first.st_size < 0 || (uint64_t)first.st_size < expected.meta.total_size)
+		return -EINVAL;
 	for (size_t plane = 1; plane < bo->meta.num_planes; plane++) {
 		struct stat current;
 		if (data->fds[plane] < 0 || fstat(data->fds[plane], &current) ||
 		    current.st_dev != first.st_dev || current.st_ino != first.st_ino)
+			return -EINVAL;
+	}
+	for (size_t plane = 0; plane < bo->meta.num_planes; plane++) {
+		if (data->strides[plane] != expected.meta.strides[plane] ||
+		    data->offsets[plane] != expected.meta.offsets[plane])
 			return -EINVAL;
 	}
 
@@ -302,8 +313,9 @@ static uint32_t staging_get_max_texture_2d_size(struct driver *drv)
 	return MESA_LLVMPIPE_MAX_TEXTURE_2D_SIZE;
 }
 
-#define STAGING_BACKEND(_name)                                                                  \
+#define STAGING_BACKEND(_name, _generic)                                                        \
 	{                                                                                          \
+		.is_generic_backend = _generic,                                                    \
 		.name = _name,                                                                      \
 		.init = staging_init,                                                                \
 		.close = staging_close,                                                              \
@@ -321,5 +333,6 @@ static uint32_t staging_get_max_texture_2d_size(struct driver *drv)
 		.get_max_texture_2d_size = staging_get_max_texture_2d_size,                           \
 	}
 
-const struct backend backend_qxl = STAGING_BACKEND("qxl");
-const struct backend backend_vboxvideo = STAGING_BACKEND("vboxvideo");
+const struct backend backend_staging = STAGING_BACKEND("staging", true);
+const struct backend backend_qxl = STAGING_BACKEND("qxl", false);
+const struct backend backend_vboxvideo = STAGING_BACKEND("vboxvideo", false);
