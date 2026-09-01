@@ -224,7 +224,7 @@ static void virgl_get_emulated_metadata(const struct bo *bo, struct bo_metadata 
 		y_plane_height = original_height;
 		c_plane_height = DIV_ROUND_UP(original_height, 2);
 
-		metadata->width = original_width * 2;
+		metadata->width = ALIGN(original_width, 2) * 2;
 		metadata->height = y_plane_height + c_plane_height;
 
 		// Y-plane (full resolution)
@@ -246,7 +246,7 @@ static void virgl_get_emulated_metadata(const struct bo *bo, struct bo_metadata 
 		y_plane_height = original_height;
 		c_plane_height = original_height;
 
-		metadata->width = original_width * 2;
+		metadata->width = ALIGN(original_width, 2) * 2;
 		metadata->height = y_plane_height + c_plane_height;
 
 		// Y-plane (full resolution)
@@ -327,7 +327,6 @@ static void virgl_get_emulated_transfers_params(const struct bo *bo,
 		xfer_params->xfers_needed = 2;
 
 		y_plane_height = bo->meta.height;
-		c_plane_height = DIV_ROUND_UP(bo->meta.height, 2);
 
 		// Y-plane (full resolution)
 		xfer_params->xfer_boxes[0].x = transfer_box->x;
@@ -336,10 +335,13 @@ static void virgl_get_emulated_transfers_params(const struct bo *bo,
 		xfer_params->xfer_boxes[0].height = transfer_box->height;
 
 		// CbCr-plane (half resolution, interleaved, placed below Y-plane)
-		xfer_params->xfer_boxes[1].x = transfer_box->x;
-		xfer_params->xfer_boxes[1].y = transfer_box->y + y_plane_height;
-		xfer_params->xfer_boxes[1].width = transfer_box->width;
-		xfer_params->xfer_boxes[1].height = DIV_ROUND_UP(transfer_box->height, 2);
+		xfer_params->xfer_boxes[1].x = transfer_box->x / 2 * 2;
+		xfer_params->xfer_boxes[1].y = y_plane_height + transfer_box->y / 2;
+		xfer_params->xfer_boxes[1].width =
+		    DIV_ROUND_UP(transfer_box->x + transfer_box->width, 2) * 2 -
+		    xfer_params->xfer_boxes[1].x;
+		xfer_params->xfer_boxes[1].height =
+		    DIV_ROUND_UP(transfer_box->y + transfer_box->height, 2) - transfer_box->y / 2;
 
 		break;
 	case DRM_FORMAT_P010:
@@ -356,10 +358,13 @@ static void virgl_get_emulated_transfers_params(const struct bo *bo,
 		xfer_params->xfer_boxes[0].height = transfer_box->height;
 
 		// CbCr-plane (half resolution, interleaved, placed below Y-plane)
-		xfer_params->xfer_boxes[1].x = transfer_box->x * 2;
-		xfer_params->xfer_boxes[1].y = transfer_box->y + y_plane_height;
-		xfer_params->xfer_boxes[1].width = transfer_box->width * 2;
-		xfer_params->xfer_boxes[1].height = DIV_ROUND_UP(transfer_box->height, 2);
+		xfer_params->xfer_boxes[1].x = transfer_box->x / 2 * 4;
+		xfer_params->xfer_boxes[1].y = y_plane_height + transfer_box->y / 2;
+		xfer_params->xfer_boxes[1].width =
+		    DIV_ROUND_UP(transfer_box->x + transfer_box->width, 2) * 4 -
+		    xfer_params->xfer_boxes[1].x;
+		xfer_params->xfer_boxes[1].height =
+		    DIV_ROUND_UP(transfer_box->y + transfer_box->height, 2) - transfer_box->y / 2;
 
 		break;
 	case DRM_FORMAT_P210:
@@ -376,9 +381,11 @@ static void virgl_get_emulated_transfers_params(const struct bo *bo,
 		xfer_params->xfer_boxes[0].height = transfer_box->height;
 
 		// CbCr-plane (full resolution height, interleaved, placed below Y-plane)
-		xfer_params->xfer_boxes[1].x = transfer_box->x * 2;
+		xfer_params->xfer_boxes[1].x = transfer_box->x / 2 * 4;
 		xfer_params->xfer_boxes[1].y = transfer_box->y + y_plane_height;
-		xfer_params->xfer_boxes[1].width = transfer_box->width * 2;
+		xfer_params->xfer_boxes[1].width =
+		    DIV_ROUND_UP(transfer_box->x + transfer_box->width, 2) * 4 -
+		    xfer_params->xfer_boxes[1].x;
 		xfer_params->xfer_boxes[1].height = transfer_box->height;
 
 		break;
@@ -397,23 +404,36 @@ static void virgl_get_emulated_transfers_params(const struct bo *bo,
 		xfer_params->xfer_boxes[0].height = transfer_box->height;
 
 		// Cb-plane (half resolution, placed below Y-plane)
-		xfer_params->xfer_boxes[1].x = transfer_box->x;
-		xfer_params->xfer_boxes[1].y = transfer_box->y + y_plane_height;
-		xfer_params->xfer_boxes[1].width = DIV_ROUND_UP(transfer_box->width, 2);
-		xfer_params->xfer_boxes[1].height = DIV_ROUND_UP(transfer_box->height, 2);
+		xfer_params->xfer_boxes[1].x = transfer_box->x / 2;
+		xfer_params->xfer_boxes[1].y = y_plane_height + transfer_box->y / 2;
+		xfer_params->xfer_boxes[1].width =
+		    DIV_ROUND_UP(transfer_box->x + transfer_box->width, 2) - transfer_box->x / 2;
+		xfer_params->xfer_boxes[1].height =
+		    DIV_ROUND_UP(transfer_box->y + transfer_box->height, 2) - transfer_box->y / 2;
 
 		// Cr-plane (half resolution, placed below Cb-plane)
-		xfer_params->xfer_boxes[2].x = transfer_box->x;
-		xfer_params->xfer_boxes[2].y = transfer_box->y + y_plane_height + c_plane_height;
-		xfer_params->xfer_boxes[2].width = DIV_ROUND_UP(transfer_box->width, 2);
-		xfer_params->xfer_boxes[2].height = DIV_ROUND_UP(transfer_box->height, 2);
+		xfer_params->xfer_boxes[2].x = transfer_box->x / 2;
+		xfer_params->xfer_boxes[2].y =
+		    y_plane_height + c_plane_height + transfer_box->y / 2;
+		xfer_params->xfer_boxes[2].width = xfer_params->xfer_boxes[1].width;
+		xfer_params->xfer_boxes[2].height = xfer_params->xfer_boxes[1].height;
 
 		break;
 	}
 }
 
-static bool virgl_supports_combination_natively(struct driver *drv, uint32_t drm_format,
-						uint64_t use_flags)
+#ifdef VIRGL_DISABLE_NATIVE_YUV
+static bool virgl_is_yuv_format(uint32_t drm_format)
+{
+	return drm_format == DRM_FORMAT_NV12 || drm_format == DRM_FORMAT_NV21 ||
+	       drm_format == DRM_FORMAT_P010 || drm_format == DRM_FORMAT_P210 ||
+	       drm_format == DRM_FORMAT_YVU420 ||
+	       drm_format == DRM_FORMAT_YVU420_ANDROID;
+}
+#endif
+
+static bool virgl_supports_combination_natively_raw(struct driver *drv, uint32_t drm_format,
+						    uint64_t use_flags)
 {
 	struct virgl_priv *priv = (struct virgl_priv *)drv->priv;
 
@@ -446,6 +466,16 @@ static bool virgl_supports_combination_natively(struct driver *drv, uint32_t drm
 	return true;
 }
 
+static bool virgl_supports_combination_natively(struct driver *drv, uint32_t drm_format,
+						uint64_t use_flags)
+{
+#ifdef VIRGL_DISABLE_NATIVE_YUV
+	if (virgl_is_yuv_format(drm_format))
+		return false;
+#endif
+	return virgl_supports_combination_natively_raw(drv, drm_format, use_flags);
+}
+
 // For virtio backends that do not support formats natively (e.g. multi-planar formats are not
 // supported in virglrenderer when gbm is unavailable on the host machine), whether or not the
 // format and usage combination can be handled as a blob (byte buffer).
@@ -454,8 +484,12 @@ static bool virgl_supports_combination_through_emulation(struct driver *drv, uin
 {
 	struct virgl_priv *priv = (struct virgl_priv *)drv->priv;
 
-	// Only enable emulation on non-gbm virtio backends.
-	if (priv->host_gbm_enabled)
+	// Only enable emulation on non-gbm virtio backends unless native YUV is disabled.
+	if (priv->host_gbm_enabled
+#ifdef VIRGL_DISABLE_NATIVE_YUV
+	    && !virgl_is_yuv_format(drm_format)
+#endif
+	)
 		return false;
 
 	if (use_flags & (BO_USE_RENDERING | BO_USE_SCANOUT))
@@ -606,7 +640,8 @@ static int virgl_3d_bo_create(struct bo *bo, uint32_t width, uint32_t height, ui
 		stride = drv_stride_from_format(format, width, 0);
 		drv_bo_from_format(bo, stride, 1, height, format);
 	} else {
-		assert(virgl_supports_combination_through_emulation(bo->drv, format, use_flags));
+		if (!virgl_supports_combination_through_emulation(bo->drv, format, use_flags))
+			return -EINVAL;
 
 		virgl_get_emulated_metadata(bo, &emulated_metadata);
 
@@ -755,7 +790,7 @@ static void virgl_init_params_and_caps(struct driver *drv)
 		//     proxy, but it works.
 		priv->host_gbm_enabled =
 		    priv->caps.max_version > 0 &&
-		    virgl_supports_combination_natively(drv, DRM_FORMAT_NV12, BO_USE_TEXTURE);
+		    virgl_supports_combination_natively_raw(drv, DRM_FORMAT_NV12, BO_USE_TEXTURE);
 	}
 }
 
@@ -821,6 +856,7 @@ static int virgl_init(struct driver *drv)
 	/* Android Camera CTS tests requires this. Additionally, the scanout usage is needed for
 	 * Camera preview and is expected to be conditionally stripped by virgl_add_combination
 	 * when not natively supported and instead handled by HWComposer. */
+#ifndef VIRGL_DISABLE_NATIVE_YUV
 	virgl_add_combination(drv, DRM_FORMAT_P010, &LINEAR_METADATA,
 			      BO_USE_SCANOUT | BO_USE_TEXTURE | BO_USE_SW_MASK |
 				  BO_USE_CAMERA_READ | BO_USE_CAMERA_WRITE |
@@ -829,6 +865,17 @@ static int virgl_init(struct driver *drv)
 			      BO_USE_SCANOUT | BO_USE_TEXTURE | BO_USE_SW_MASK |
 				  BO_USE_CAMERA_READ | BO_USE_CAMERA_WRITE |
 				  BO_USE_HW_VIDEO_DECODER | BO_USE_HW_VIDEO_ENCODER);
+#else
+	virgl_add_combination(drv, DRM_FORMAT_YVU420, &LINEAR_METADATA, BO_USE_TEXTURE_MASK);
+	virgl_add_combination(drv, DRM_FORMAT_P010, &LINEAR_METADATA,
+			      BO_USE_TEXTURE | BO_USE_SW_MASK | BO_USE_CAMERA_READ |
+				  BO_USE_CAMERA_WRITE | BO_USE_HW_VIDEO_DECODER |
+				  BO_USE_HW_VIDEO_ENCODER);
+	virgl_add_combination(drv, DRM_FORMAT_P210, &LINEAR_METADATA,
+			      BO_USE_TEXTURE | BO_USE_SW_MASK | BO_USE_CAMERA_READ |
+				  BO_USE_CAMERA_WRITE | BO_USE_HW_VIDEO_DECODER |
+				  BO_USE_HW_VIDEO_ENCODER);
+#endif
 	/* Android VTS sensors hal tests require BO_USE_SENSOR_DIRECT_DATA. */
 	drv_modify_combination(drv, DRM_FORMAT_R8, &LINEAR_METADATA,
 			       BO_USE_CAMERA_READ | BO_USE_CAMERA_WRITE | BO_USE_HW_VIDEO_DECODER |
@@ -855,6 +902,16 @@ static int virgl_init(struct driver *drv)
 				       BO_USE_CAMERA_READ | BO_USE_CAMERA_WRITE |
 					   BO_USE_HW_VIDEO_DECODER | BO_USE_HW_VIDEO_ENCODER);
 	}
+#ifdef VIRGL_DISABLE_NATIVE_YUV
+	else {
+		drv_modify_combination(drv, DRM_FORMAT_NV21, &LINEAR_METADATA,
+				       BO_USE_CAMERA_READ | BO_USE_CAMERA_WRITE |
+					   BO_USE_HW_VIDEO_DECODER | BO_USE_HW_VIDEO_ENCODER);
+		drv_modify_combination(drv, DRM_FORMAT_YVU420_ANDROID, &LINEAR_METADATA,
+				       BO_USE_CAMERA_READ | BO_USE_CAMERA_WRITE |
+					   BO_USE_HW_VIDEO_DECODER | BO_USE_HW_VIDEO_ENCODER);
+	}
+#endif
 
 	return drv_modify_linear_combinations(drv);
 }
@@ -1050,6 +1107,11 @@ static bool should_use_blob(struct driver *drv, uint32_t format, uint64_t use_fl
 	if (!priv->host_gbm_enabled)
 		return false;
 
+#ifdef VIRGL_DISABLE_NATIVE_YUV
+	if (virgl_is_yuv_format(format))
+		return false;
+#endif
+
 	// Use regular resources if only the GPU needs efficient access. Blob resource is a better
 	// fit for BO_USE_GPU_DATA_BUFFER which is mapped to VIRGL_BIND_LINEAR.
 	if (!(use_flags & (BO_USE_SW_READ_OFTEN | BO_USE_SW_WRITE_OFTEN | BO_USE_LINEAR |
@@ -1220,8 +1282,9 @@ static int virgl_bo_invalidate(struct bo *bo, struct mapping *mapping)
 		xfer_params.xfers_needed = 1;
 		xfer_params.xfer_boxes[0] = mapping->rect;
 	} else {
-		assert(virgl_supports_combination_through_emulation(bo->drv, bo->meta.format,
-								    bo->meta.use_flags));
+		if (!virgl_supports_combination_through_emulation(bo->drv, bo->meta.format,
+								       bo->meta.use_flags))
+			return -EINVAL;
 
 		virgl_get_emulated_transfers_params(bo, &mapping->rect, &xfer_params);
 	}
@@ -1296,8 +1359,9 @@ static int virgl_bo_flush(struct bo *bo, struct mapping *mapping)
 		xfer_params.xfers_needed = 1;
 		xfer_params.xfer_boxes[0] = mapping->rect;
 	} else {
-		assert(virgl_supports_combination_through_emulation(bo->drv, bo->meta.format,
-								    bo->meta.use_flags));
+		if (!virgl_supports_combination_through_emulation(bo->drv, bo->meta.format,
+								       bo->meta.use_flags))
+			return -EINVAL;
 
 		virgl_get_emulated_transfers_params(bo, &mapping->rect, &xfer_params);
 	}
@@ -1366,6 +1430,12 @@ static void virgl_3d_resolve_format_and_use_flags(struct driver *drv, uint32_t f
 	/* resolve explicit format */
 	switch (*out_format) {
 	case DRM_FORMAT_NV12:
+#ifdef VIRGL_DISABLE_NATIVE_YUV
+	case DRM_FORMAT_NV21:
+	case DRM_FORMAT_P010:
+	case DRM_FORMAT_P210:
+	case DRM_FORMAT_YVU420:
+#endif
 	case DRM_FORMAT_ABGR8888:
 	case DRM_FORMAT_ARGB8888:
 	case DRM_FORMAT_RGB565:

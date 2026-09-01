@@ -137,6 +137,9 @@ cc_defaults {
     }) + select(soong_config_variable("minigbm_upstream", "cflags"), {
         any @ flag_val: flag_val,
         default: [],
+    }) + select(soong_config_variable("minigbm_upstream", "disable_virgl_native_yuv"), {
+        true: ["-DVIRGL_DISABLE_NATIVE_YUV"],
+        default: [],
     }) + select(soong_config_variable("minigbm_upstream", "enable_gbm_mesa_driver"), {
         true: gbm_mesa_cflags,
         default: [],
