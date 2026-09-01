@@ -44,6 +44,7 @@ minigbm_upstream_apex {
     prebuilts: [
         "allocator.minigbm_upstream.xml", // vintf
         "com.android.hardware.graphics.allocator.minigbm_upstream.rc", // init_rc
+        "com.android.hardware.graphics.allocator.minigbm_upstream-linker-config", // make the apex namespace visible for mapper library
     ],
     overrides: [
         "android.hardware.graphics.allocator-service.minigbm_upstream",
@@ -70,7 +71,6 @@ apex_defaults {
     ],
     prebuilts: [
         "mapper.minigbm_upstream.xml", // vintf
-        "com.android.hardware.graphics.allocator.minigbm_upstream-linker-config", // make the apex namespace visible for mapper library
     ],
     overrides: [
         "mapper.minigbm_upstream",
