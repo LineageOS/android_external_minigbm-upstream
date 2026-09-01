@@ -52,6 +52,11 @@ extern "C" {
 #include <xf86drm.h>
 #include <xf86drmMode.h>
 
+#ifdef __LP64__
+#define GBM_WRAPPER_BASEPATH "/vendor/lib64/"
+#else
+#define GBM_WRAPPER_BASEPATH "/vendor/lib/"
+#endif
 #define GBM_WRAPPER_NAME "libgbm_mesa_wrapper.so"
 #define GBM_GET_OPS_SYMBOL "get_gbm_ops"
 
@@ -275,7 +280,7 @@ static std::shared_ptr<GbmMesaDriver> gbm_mesa_get_or_init_driver(struct driver 
 			return nullptr;
 		}
 
-		gbm_mesa_drv->dl_handle = dlopen(GBM_WRAPPER_NAME, RTLD_NOW);
+		gbm_mesa_drv->dl_handle = dlopen(GBM_WRAPPER_BASEPATH GBM_WRAPPER_NAME, RTLD_NOW);
 		if (gbm_mesa_drv->dl_handle == nullptr) {
 			drv_loge("%s", dlerror());
 			drv_loge("Unable to open '%s' shared library", GBM_WRAPPER_NAME);
