@@ -26,6 +26,12 @@
 #include <log/log.h>
 #include <sys/mman.h>
 
+#ifdef __LP64__
+#define GBM_BASEPATH "/vendor/lib64/"
+#else
+#define GBM_BASEPATH "/vendor/lib/"
+#endif
+
 #define ARRAY_SIZE(A) (sizeof(A) / sizeof(*(A)))
 #define DRM_TO_GBM_FORMAT(A)                                                                       \
 	{                                                                                          \
@@ -219,7 +225,7 @@ static bool setup_gbm_priv_ops()
 		return true;
 	}
 
-	void *handle = dlopen("libgbm_mesa.so", RTLD_NOW);
+	void *handle = dlopen(GBM_BASEPATH "libgbm_mesa.so", RTLD_NOW);
 	if (!handle) {
 		ALOGE("Failed to open libgbm_mesa.so: %s", dlerror());
 		return false;
