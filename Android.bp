@@ -43,7 +43,6 @@ filegroup {
         "drv_array_helpers.c",
         "drv_helpers.c",
         "dumb_driver.c",
-        "i915.c",
         "mediatek.c",
         "msm.c",
         "rockchip.c",
@@ -53,7 +52,6 @@ filegroup {
         "virtgpu_cross_domain.c",
         "virtgpu_virgl.c",
         "vmwgfx.c",
-        "xe.c",
     ] + select(soong_config_variable("minigbm_upstream", "enable_gbm_mesa_driver"), {
         true: [
             "gbm_mesa_driver/gbm_mesa_driver.cpp",
@@ -61,6 +59,21 @@ filegroup {
         ],
         default: [],
     }),
+
+    arch: {
+        x86: {
+            srcs: [
+                "i915.c",
+                "xe.c",
+            ],
+        ],
+        x86_64: [
+            srcs: [
+                "i915.c",
+                "xe.c",
+            ],
+        },
+    },
 }
 
 filegroup {
